@@ -1,0 +1,17 @@
+# Python / AI
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.env
+
+# Node.js / App
+node_modules/
+.next/
+dist/
+
+# OS & VS Code
+.DS_Store
+.vscode/
+*.log
