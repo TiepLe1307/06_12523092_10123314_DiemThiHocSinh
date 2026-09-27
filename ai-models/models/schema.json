@@ -1,0 +1,29 @@
+{
+    "target": "Performance Index",
+    "features": [
+        {
+            "name": "Hours Studied",
+            "type": "number"
+        },
+        {
+            "name": "Previous Scores",
+            "type": "number"
+        },
+        {
+            "name": "Extracurricular Activities",
+            "type": "string",
+            "allowed_values": [
+                "No",
+                "Yes"
+            ]
+        },
+        {
+            "name": "Sleep Hours",
+            "type": "number"
+        },
+        {
+            "name": "Sample Question Papers Practiced",
+            "type": "number"
+        }
+    ]
+}

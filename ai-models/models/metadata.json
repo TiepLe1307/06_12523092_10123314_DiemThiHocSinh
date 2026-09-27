@@ -1,0 +1,33 @@
+{
+    "project": "Student Performance Prediction",
+    "task": "regression",
+    "model_name": "Linear Regression",
+    "dataset": {
+        "name": "Student Performance",
+        "samples_original": 10000,
+        "duplicates_removed": 127,
+        "samples_after_deduplication": 9873,
+        "train_samples": 7898,
+        "test_samples": 1975
+    },
+    "features": {
+        "input_features": 5,
+        "processed_features": 6
+    },
+    "preprocessing": {
+        "numeric_scaler": "StandardScaler",
+        "categorical_encoder": "OneHotEncoder",
+        "categorical_handle_unknown": "ignore"
+    },
+    "evaluation": {
+        "MAE": 1.6469703984255564,
+        "RMSE": 2.075066490148803,
+        "R2": 0.9884301209927054,
+        "Train_R2": 0.9887391160677558,
+        "R2_Gap": 0.0003089950750503334
+    },
+    "training": {
+        "random_state": 42,
+        "sklearn_version": "1.6.1"
+    }
+}
