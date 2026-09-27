@@ -1,17 +1,55 @@
+# =========================
+# Environment / Secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
 # Python / AI
+# =========================
 __pycache__/
 *.py[cod]
 *$py.class
 .venv/
 venv/
-*.env
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
 
-# Node.js / App
+# =========================
+# Node.js / Next.js
+# =========================
 node_modules/
 .next/
+out/
 dist/
+build/
+coverage/
+.npm/
+*.tsbuildinfo
 
-# OS & VS Code
-.DS_Store
-.vscode/
+# =========================
+# Logs
+# =========================
 *.log
+logs/
+
+# =========================
+# Docker
+# =========================
+docker-compose.override.yml
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# VS Code
+# =========================
+.vscode/

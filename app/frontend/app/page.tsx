@@ -16,7 +16,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   // Đã cố định trực tiếp URL kết nối đến Backend
-  const BACKEND_URL = 'http://localhost:8000';
+  const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -33,7 +34,11 @@ export default function Home() {
     setResult(null);
 
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/predict`, formData);
+      const request_id = crypto.randomUUID();
+      const response = await axios.post(`${BACKEND_URL}/api/predict`, {
+        ...formData,
+        request_id
+    });
       setResult(response.data);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Đã xảy ra lỗi khi kết nối đến Backend.");

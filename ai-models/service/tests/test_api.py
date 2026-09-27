@@ -29,11 +29,12 @@ def test_model_info():
 
 def test_predict():
     payload = {
-        "hours_studied": 5,
-        "previous_scores": 70,
-        "extracurricular_activities": "Yes",
-        "sleep_hours": 7,
-        "sample_question_papers_practiced": 5
+        "request_id": "test-request-001",
+        "Hours Studied": 5,
+        "Previous Scores": 70,
+        "Extracurricular Activities": "Yes",
+        "Sleep Hours": 7,
+        "Sample Question Papers Practiced": 5
     }
 
     response = client.post("/predict", json=payload)
@@ -42,23 +43,40 @@ def test_predict():
 
     data = response.json()
 
-    assert "request_id" in data
+    assert data["request_id"] == "test-request-001"
     assert "prediction" in data
     assert data["target"] == "Performance Index"
     assert data["model"] == "Linear Regression"
-
+    assert data["model_version"] == "1.0.0"
     assert isinstance(data["prediction"], float)
+
+    assert 0 <= data["prediction"] <= 100
 
 
 def test_predict_invalid_extracurricular_activity():
     payload = {
-        "hours_studied": 5,
-        "previous_scores": 70,
-        "extracurricular_activities": "Maybe",
-        "sleep_hours": 7,
-        "sample_question_papers_practiced": 5
+        "request_id": "test-request-002",
+        "Hours Studied": 5,
+        "Previous Scores": 70,
+        "Extracurricular Activities": "Maybe",
+        "Sleep Hours": 7,
+        "Sample Question Papers Practiced": 5
     }
 
     response = client.post("/predict", json=payload)
 
     assert response.status_code == 400
+
+
+def test_predict_missing_field():
+    payload = {
+        "request_id": "test-request-003",
+        "Hours Studied": 5,
+        "Previous Scores": 70,
+        "Extracurricular Activities": "Yes",
+        "Sleep Hours": 7
+    }
+
+    response = client.post("/predict", json=payload)
+
+    assert response.status_code == 422
