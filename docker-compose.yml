@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-models/service/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+
+  backend:
+    build: ./app/backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - AI_SERVICE_URL=http://ai-service:8001
+    depends_on:
+      - ai-service
+
+  frontend:
+    build: ./app/frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
