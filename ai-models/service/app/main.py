@@ -1,9 +1,10 @@
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 import joblib
 import json
 import os
-import uuid
 import pandas as pd
+
 
 # ============================================================
 # CONFIG
@@ -58,6 +59,43 @@ app = FastAPI(
 
 
 # ============================================================
+# REQUEST MODEL
+# ============================================================
+
+class PredictionRequest(BaseModel):
+    request_id: str = Field(..., min_length=1)
+
+    hours_studied: float = Field(
+        ...,
+        alias="Hours Studied",
+        ge=0
+    )
+
+    previous_scores: float = Field(
+        ...,
+        alias="Previous Scores",
+        ge=0
+    )
+
+    extracurricular_activities: str = Field(
+        ...,
+        alias="Extracurricular Activities"
+    )
+
+    sleep_hours: float = Field(
+        ...,
+        alias="Sleep Hours",
+        ge=0
+    )
+
+    sample_question_papers_practiced: float = Field(
+        ...,
+        alias="Sample Question Papers Practiced",
+        ge=0
+    )
+
+
+# ============================================================
 # HEALTH
 # ============================================================
 
@@ -79,46 +117,42 @@ def model_info():
 
 
 # ============================================================
-# PREDICT (Nhận trực tiếp dict và chặn biên từ 0 đến 100)
+# PREDICT
 # ============================================================
 
 @app.post("/predict")
-def predict(payload: dict):
-    try:
-        # Lấy dữ liệu linh hoạt dù viết hoa, có dấu cách hay chữ thường
-        hours = payload.get("Hours Studied", payload.get("hours_studied"))
-        scores = payload.get("Previous Scores", payload.get("previous_scores"))
-        extracur = payload.get("Extracurricular Activities", payload.get("extracurricular_activities"))
-        sleep = payload.get("Sleep Hours", payload.get("sleep_hours"))
-        papers = payload.get("Sample Question Papers Practiced", payload.get("sample_question_papers_practiced"))
+def predict(request: PredictionRequest):
+    print(
+        f"[INFO] AI Service req={request.request_id} nhận request dự đoán"
+    )
+    if request.extracurricular_activities not in ["Yes", "No"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Extracurricular Activities must be Yes or No"
+        )
 
-        if extracur not in ["Yes", "No"]:
-            raise HTTPException(
-                status_code=400,
-                detail="extracurricular_activities must be Yes or No"
-            )
+    input_data = {
+        "Hours Studied": request.hours_studied,
+        "Previous Scores": request.previous_scores,
+        "Extracurricular Activities": request.extracurricular_activities,
+        "Sleep Hours": request.sleep_hours,
+        "Sample Question Papers Practiced": request.sample_question_papers_practiced
+    }
 
-        request_id = str(uuid.uuid4())
+    input_df = pd.DataFrame([input_data])
 
-        input_data = {
-            "Hours Studied": float(hours),
-            "Previous Scores": float(scores),
-            "Extracurricular Activities": str(extracur),
-            "Sleep Hours": float(sleep),
-            "Sample Question Papers Practiced": float(papers)
-        }
+    raw_prediction = model.predict(input_df)[0]
 
-        input_df = pd.DataFrame([input_data])
-        raw_prediction = model.predict(input_df)[0]
-        
-        # Chặn giá trị đầu ra luôn nằm trong khoảng [0, 100]
-        final_prediction = max(0.0, min(100.0, float(raw_prediction)))
+    # Giới hạn điểm dự đoán trong khoảng 0 - 100
+    final_prediction = max(
+        0.0,
+        min(100.0, float(raw_prediction))
+    )
 
-        return {
-            "request_id": request_id,
-            "prediction": round(final_prediction, 2),
-            "target": "Performance Index",
-            "model": metadata["model_name"]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Lỗi xử lý dữ liệu đầu vào: {str(e)}")
+    return {
+        "request_id": request.request_id,
+        "prediction": round(final_prediction, 2),
+        "target": "Performance Index",
+        "model": metadata["model_name"],
+        "model_version": "1.0.0"
+    }
