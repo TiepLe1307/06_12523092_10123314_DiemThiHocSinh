@@ -1,10 +1,9 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
 import joblib
 import json
 import os
 import uuid
-
+import pandas as pd
 
 # ============================================================
 # CONFIG
@@ -59,18 +58,6 @@ app = FastAPI(
 
 
 # ============================================================
-# REQUEST SCHEMA
-# ============================================================
-
-class PredictionRequest(BaseModel):
-    hours_studied: float = Field(..., ge=0)
-    previous_scores: float = Field(..., ge=0)
-    extracurricular_activities: str
-    sleep_hours: float = Field(..., ge=0)
-    sample_question_papers_practiced: float = Field(..., ge=0)
-
-
-# ============================================================
 # HEALTH
 # ============================================================
 
@@ -92,38 +79,46 @@ def model_info():
 
 
 # ============================================================
-# PREDICT
+# PREDICT (Nhận trực tiếp dict và chặn biên từ 0 đến 100)
 # ============================================================
 
 @app.post("/predict")
-def predict(request: PredictionRequest):
+def predict(payload: dict):
+    try:
+        # Lấy dữ liệu linh hoạt dù viết hoa, có dấu cách hay chữ thường
+        hours = payload.get("Hours Studied", payload.get("hours_studied"))
+        scores = payload.get("Previous Scores", payload.get("previous_scores"))
+        extracur = payload.get("Extracurricular Activities", payload.get("extracurricular_activities"))
+        sleep = payload.get("Sleep Hours", payload.get("sleep_hours"))
+        papers = payload.get("Sample Question Papers Practiced", payload.get("sample_question_papers_practiced"))
 
-    if request.extracurricular_activities not in ["Yes", "No"]:
-        raise HTTPException(
-            status_code=400,
-            detail="extracurricular_activities must be Yes or No"
-        )
+        if extracur not in ["Yes", "No"]:
+            raise HTTPException(
+                status_code=400,
+                detail="extracurricular_activities must be Yes or No"
+            )
 
-    request_id = str(uuid.uuid4())
+        request_id = str(uuid.uuid4())
 
-    input_data = {
-        "Hours Studied": request.hours_studied,
-        "Previous Scores": request.previous_scores,
-        "Extracurricular Activities": request.extracurricular_activities,
-        "Sleep Hours": request.sleep_hours,
-        "Sample Question Papers Practiced":
-            request.sample_question_papers_practiced
-    }
+        input_data = {
+            "Hours Studied": float(hours),
+            "Previous Scores": float(scores),
+            "Extracurricular Activities": str(extracur),
+            "Sleep Hours": float(sleep),
+            "Sample Question Papers Practiced": float(papers)
+        }
 
-    import pandas as pd
+        input_df = pd.DataFrame([input_data])
+        raw_prediction = model.predict(input_df)[0]
+        
+        # Chặn giá trị đầu ra luôn nằm trong khoảng [0, 100]
+        final_prediction = max(0.0, min(100.0, float(raw_prediction)))
 
-    input_df = pd.DataFrame([input_data])
-
-    prediction = model.predict(input_df)[0]
-
-    return {
-        "request_id": request_id,
-        "prediction": round(float(prediction), 2),
-        "target": "Performance Index",
-        "model": metadata["model_name"]
-    }
+        return {
+            "request_id": request_id,
+            "prediction": round(final_prediction, 2),
+            "target": "Performance Index",
+            "model": metadata["model_name"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Lỗi xử lý dữ liệu đầu vào: {str(e)}")
