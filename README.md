@@ -14,7 +14,7 @@
 - **Mô tả:** Dự đoán kết quả học tập / chỉ số điểm thi của học sinh dựa trên các đặc điểm quá trình tự học, kết quả kỳ thi trước và thói quen sinh hoạt.
 - **Loại bài toán:** Hồi quy (Regression).
 - **Cột mục tiêu:** `Performance Index` (Thang điểm từ 10.0 đến 100.0).
-- **Ý nghĩa thực tế:** Hỗ trợ nhà trường, giáo viên và phụ huynh nhận diện sớm những học sinh có nguy cơ đạt điểm kém để kịp thời điều chỉnh thời gian tự học, bài tập ôn luyện và thời gian nghỉ ngơi.
+- **Ý nghĩa thực tế:** Hỗ trợ nhà trường, giáo viên và phụ huynh nhận diện sớm những học sinh có nguy cơ đạt điểm kém để kịp thời điều chỉnh thời gian tự học, bài tập ôn luyện và thời gian nghỉ ngơi
 
 ---
 
@@ -39,31 +39,48 @@
 ---
 
 ## 5. Đóng gói model
-- Đường dẫn file lưu trữ: `ai-models/models/linear_regression_model.pkl` (hoặc `model.joblib`), kèm theo các file `schema.json` và `metadata.json`.
+- Đường dẫn file lưu trữ: `ai-models/models/model.joblib` (kèm theo `schema.json` và `metadata.json`).
 
 ---
 
 ## 6. Kiến trúc hệ thống
-[Frontend] → [Backend] → [AI Service] → (trả kết quả ngược lại)
-                 ↓
-             [Database] (lưu lịch sử dự đoán)
+Frontend (Next.js)
+       │
+       ▼
+Backend (Node.js + Express)
+       │
+       ├──────────────────────► MongoDB Atlas (Lưu lịch sử & Trace request_id)
+       │
+       ▼
+AI Service (FastAPI + scikit-learn)
 
-Luồng xử lý: Người dùng nhập thông tin trên Frontend, Backend nhận request gửi sang AI Service để tính toán điểm số từ mô hình Linear Regression, sau đó lưu kết quả vào Database và trả về giao diện cho người dùng.
+Luồng xử lý: Người dùng nhập thông tin trên Frontend, Backend nhận request gửi sang AI Service để tính toán điểm số từ mô hình Linear Regression, sau đó ghi log lịch sử kèm request_id vào MongoDB Atlas và trả kết quả về giao diện cho người dùng.
 
 ---
 
 ## 7. Chạy trên máy
-Yêu cầu: đã cài **Docker Desktop**.
+Yêu cầu: đã cài Docker Desktop và Git.
 
-`cp .env.example .env`
-`docker compose up --build`
+Clone repository và cấu hình biến môi trường:
 
-⚠️ Dockerfile của `ai-models/service`, `app/backend`, `app/frontend` đang được hoàn thiện và chạy đồng bộ thông qua Docker Compose.
+Bash
+git clone [https://github.com/TiepLe1307/06_12523092_10123314_DiemThiHocSinh.git](https://github.com/TiepLe1307/06_12523092_10123314_DiemThiHocSinh.git)
+cd 06_12523092_10123314_DiemThiHocSinh
+cp .env.example .env
+Khởi động hệ thống bằng Docker Compose:
+
+Bash
+docker compose up -d --build
+Kiểm tra trạng thái service:
+
+Bash
+docker compose ps
 
 ---
 
 ## 8. Huấn luyện lại model
-Huấn luyện lại mô hình thông qua Google Colab và chạy theo đúng thứ tự các notebook: `01_eda` → `02_preprocess` → `03_train` → `04_evaluate`.
+Huấn luyện lại mô hình thông qua Google Colab và chạy theo đúng thứ tự các notebook tại thư mục ai-models/colab/:
+01_eda.ipynb → 02_preprocess.ipynb → 03_train.ipynb → 04_evaluate.ipynb.
 
 ---
 
@@ -74,30 +91,63 @@ Huấn luyện lại mô hình thông qua Google Colab và chạy theo đúng th
 | `BACKEND_PORT` | Cổng chạy Backend |
 | `FRONTEND_PORT` | Cổng chạy Frontend |
 | `AI_SERVICE_URL` | Địa chỉ Backend gọi tới AI Service |
-| `DATABASE_URI` | Chuỗi kết nối cơ sở dữ liệu |
-| `API_URL` | Địa chỉ Frontend gọi tới Backend |
+| `DATABASE_URI` | Chuỗi kết nối cơ sở dữ liệu MongoDB Atlas |
+| `NEXT_PUBLIC_API_URL` | Địa chỉ Frontend gọi tới Backend (https://diem-thi-backend.onrender.com) |
 
 ---
 
 ## 10. Triển khai
-Sử dụng Ngrok / Cloudflare Tunnel để public ứng dụng từ môi trường local lên Internet. Mỗi khi khởi động lại cổng tunnel, cập nhật lại địa chỉ mới vào file README.md và thực hiện commit đẩy lên GitHub.
+Hệ thống được triển khai phân tán trên các nền tảng Cloud:
+
+Frontend: Triển khai trực tiếp trên Vercel tại https://dthi.vercel.app/.
+
+Backend: Triển khai trên Render tại https://diem-thi-backend.onrender.com.
+
+AI Service: Kết nối qua Ngrok Tunnel (https://sequester-unclaimed-leggings.ngrok-free.dev) khi gọi từ môi trường production trên Render.
 
 ---
 
 ## 11. Demo online
-sẽ cập nhật sau
+Frontend URL: https://dthi.vercel.app/
+
+Backend Health Check: https://diem-thi-backend.onrender.com/health
 
 ---
 
 ## 12. Nhật ký đổi cổng/tunnel
-| Thời điểm | Địa chỉ cũ | Địa chỉ mới |
-|---|---|---|
+| Thời điểm | Địa chỉ cũ | Địa chỉ mới | Ghi chú |
+|Thời điểmĐịa chỉ cũĐịa chỉ mớiGhi chúTriển khai đợt 1|---|https://sequester-unclaimed-leggings.ngrok-free.dev| Ngrok tunnel kết nối AI Service |
 
 ---
 
 ## 13. Kết quả kiểm thử hiệu năng
+Unit & Integration Tests:
 
+AI Service tests: 5/5 PASS
+
+Backend tests: 4/4 PASS (Bao gồm test validate dữ liệu lỗi 400 Bad Request khi truyền sai định dạng Extracurricular Activities: "Maybe").
+
+Load / Performance Test (50 request đồng thời):
+
+Success count: 50 / 50
+
+Failure count: 0
+
+Latency (Local): Min ~46.75 ms, Max ~114.77 ms, Trung bình ~51.73 ms.
 
 ---
 
 ## 14. Hạn chế và hướng phát triển
+Hạn chế:
+
+Mô hình hiện tại dựa trên bộ dữ liệu tĩnh với số lượng đặc trưng (features) còn hạn chế, chưa cập nhật theo thời gian thực từ các kỳ thi thực tế.
+
+Sử dụng Ngrok miễn phí dẫn đến URL có thể thay đổi khi khởi động lại tunnel.
+
+Hướng phát triển:
+
+Mở rộng thêm các đặc trưng đầu vào (như thời gian tự học online, mức độ chuyên cần, thu nhập gia đình).
+
+Triển khai AI Service lên các cloud hosting chuyên dụng (như AWS ECS, Google Cloud Run hoặc Render) để loại bỏ hoàn toàn sự phụ thuộc vào Ngrok.
+
+Nâng cấp giao diện quản lý lịch sử dự đoán (History Dashboard) trực quan hơn cho người dùng.
